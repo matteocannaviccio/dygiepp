@@ -20,6 +20,7 @@ def parseAce(annfn, entity_set, rel_set):
         else:
             tokens = line.split('\t')
             key = tokens[0]
+            cluster = tokens[0].split("-")[-2].replace('E', '')
             offsets = tokens[1].split()[1:]
             offset0 = int(offsets[0])
             offset1 = int(offsets[1])
@@ -27,7 +28,7 @@ def parseAce(annfn, entity_set, rel_set):
             keyphrase = tokens[2]
             global lengths
             lengths.append(len(keyphrase.split()))
-            entity_dir[key] = {'ner':ner, 'offset': [offset0, offset1], 'keyphrase':keyphrase}
+            entity_dir[key] = {'ner':ner, 'offset': [offset0, offset1], 'keyphrase':keyphrase, 'cluster': cluster}
             entity_set.add(ner)
 
     return entity_dir, rel_dir
@@ -109,6 +110,29 @@ def Ace2json(entity_dir, rel_dir, token_dict_offset1, token_dict_offset2, txtfn,
     ner = [[] for i in range(len(sentences))]
     relations = [[] for i in range(len(sentences))]
 
+    idCluster2spans = {}
+    for entity in entity_dir:
+        offsets = tuple(entity_dir[entity]['offset'])
+        cluster = entity_dir[entity]['cluster']
+        if not cluster in idCluster2spans:
+            idCluster2spans[cluster] = []
+        idCluster2spans[cluster].append(offsets)
+
+    clusters = {}
+    c = 0
+    for cl in idCluster2spans:
+        if len(idCluster2spans[cl]) < 2:
+            continue
+        listSpan = idCluster2spans[cl]
+        for l in listSpan:
+            spans = []
+            spans.append(l[0])
+            spans.append(l[1])
+            if not c in clusters:
+                clusters[c] = []
+            clusters[c].append(spans)
+        c +=1
+
     for entity in entity_dir:
         offsets = tuple(entity_dir[entity]['offset'])
         if offsets[0] in token_dict_offset1:
@@ -132,7 +156,7 @@ def Ace2json(entity_dir, rel_dir, token_dict_offset1, token_dict_offset2, txtfn,
         tokid3 = token_dict_offset2[entity_dir[arg2]['offset'][1]]['tokenid']
         relations[token_dict_offset1[entity_dir[arg1]['offset'][0]]['sentid']].append([tokid0, tokid1, tokid2, tokid3, rel_dir[relation]['relation']])
         relcount += 1
-    docs.append({"sentences":sentences, "ner":ner, "relations": relations, "clusters":[], "doc_key":fn})
+    docs.append({"sentences":sentences, "ner":ner, "relations": relations, "clusters": clusters, "doc_key":fn})
     return nercount, relcount, sentcount
 
 def WriteDocs(docs, outfn):

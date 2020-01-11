@@ -11,7 +11,7 @@ mkdir -p $out_path/raw-data
 cp -r $raw_path/*/English $process_path
 cd $process_path
 zsh run.zsh
-python ace2json.py
+python3 ace2json.py
 
 # Move all the intermediate files to the `raw-data` folder if the output path.
 cd $original_path
