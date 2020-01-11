@@ -113,25 +113,34 @@ def Ace2json(entity_dir, rel_dir, token_dict_offset1, token_dict_offset2, txtfn,
     idCluster2spans = {}
     for entity in entity_dir:
         offsets = tuple(entity_dir[entity]['offset'])
+        if offsets[0] in token_dict_offset1:
+            offset0 = token_dict_offset1[offsets[0]]
+            tokenid0 = offset0['tokenid']
+        else:
+            pdb.set_trace()
+        if offsets[1] in token_dict_offset2:
+            offset1 = token_dict_offset2[offsets[1]]
+            tokenid1 = offset1['tokenid']
+        else:
+            pdb.set_trace()
+        offsets = (tokenid0, tokenid1)
         cluster = entity_dir[entity]['cluster']
         if not cluster in idCluster2spans:
             idCluster2spans[cluster] = []
         idCluster2spans[cluster].append(offsets)
 
-    clusters = {}
-    c = 0
+    clusters = []
     for cl in idCluster2spans:
         if len(idCluster2spans[cl]) < 2:
             continue
         listSpan = idCluster2spans[cl]
+        chain = []
         for l in listSpan:
             spans = []
             spans.append(l[0])
             spans.append(l[1])
-            if not c in clusters:
-                clusters[c] = []
-            clusters[c].append(spans)
-        c +=1
+            chain.append(spans)
+        clusters.append(chain)
 
     for entity in entity_dir:
         offsets = tuple(entity_dir[entity]['offset'])
